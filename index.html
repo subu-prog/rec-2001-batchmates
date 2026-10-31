@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REC 2001 - Batchmates</title>
+<style>
+  :root { --navy:#1a2a4a; --gold:#e8b931; --paper:#f7f5f0; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:Georgia,'Times New Roman',serif; background:var(--paper); color:#222; }
+  header { background:var(--navy); color:#fff; padding:28px 16px 22px; text-align:center; border-bottom:4px solid var(--gold); }
+  header .badge { display:inline-block; background:var(--gold); color:var(--navy); font-weight:bold; font-size:13px; letter-spacing:2px; padding:4px 14px; border-radius:20px; margin-bottom:10px; }
+  header h1 { font-size:26px; font-weight:normal; letter-spacing:1px; }
+  header p { font-size:14px; opacity:.85; margin-top:6px; }
+  .wrap { max-width:980px; margin:0 auto; padding:20px 16px 60px; }
+  .tools { display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  #search { flex:1; min-width:200px; padding:10px 14px; font-size:15px; font-family:inherit; border:1px solid #ccc; border-radius:8px; background:#fff; }
+  #count { font-size:13px; color:#666; white-space:nowrap; }
+  table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+  th { background:var(--navy); color:#fff; text-align:left; font-size:13px; letter-spacing:1px; padding:12px 12px; }
+  td { padding:12px; font-size:15px; border-bottom:1px solid #eee; vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  tr:nth-child(even) td { background:#fafaf7; }
+  td.name { font-weight:bold; color:var(--navy); }
+  td.roll, td.branch { color:#555; }
+  td.comments { line-height:1.55; }
+  .empty { text-align:center; color:#888; padding:30px; font-style:italic; }
+  button.act { font-family:inherit; font-size:13px; padding:6px 12px; border:1px solid var(--navy); background:#fff; color:var(--navy); border-radius:6px; cursor:pointer; white-space:nowrap; }
+  button.act:hover { background:var(--navy); color:#fff; }
+  button.primary { background:var(--navy); color:#fff; }
+  button.primary:hover { background:#2a3c66; }
+  .addbox { background:#fff; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.08); padding:18px; margin-bottom:18px; }
+  .addbox h2 { font-size:17px; color:var(--navy); margin-bottom:12px; font-weight:normal; }
+  .formgrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .formgrid .wide { grid-column:1 / -1; }
+  input.f, textarea.f { width:100%; padding:9px 12px; font-size:15px; font-family:inherit; border:1px solid #ccc; border-radius:8px; background:#fff; }
+  textarea.f { resize:vertical; min-height:70px; }
+  .formrow { margin-top:12px; display:flex; gap:10px; align-items:center; }
+  #status { font-size:13px; color:#666; }
+  tr.editing td { background:#fffbe8; }
+  footer { text-align:center; font-size:12px; color:#999; margin-top:24px; line-height:1.7; }
+  footer a { color:var(--navy); }
+  @media (max-width:720px) {
+    .formgrid { grid-template-columns:1fr; }
+    table, tbody, tr, td { display:block; width:100%; }
+    thead { display:none; }
+    table { background:transparent; box-shadow:none; }
+    tr { background:#fff; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:12px; padding:12px; }
+    tr:nth-child(even) td { background:transparent; }
+    td { border-bottom:none !important; padding:4px 6px; font-size:14px; }
+    td.roll, td.branch { display:inline-block; width:auto; color:#777; font-size:13px; }
+    td.roll::before { content:'Roll No: '; }
+    td.branch::before { content:' - Branch: '; }
+    td:last-child { text-align:right; }
+  }
+
+  #gate { position:fixed; inset:0; background:var(--navy); display:none; align-items:center; justify-content:center; z-index:50; padding:20px; }
+  #gate.open { display:flex; }
+  #gate .card { background:#fff; border-radius:12px; padding:28px 24px; max-width:380px; width:100%; text-align:center; box-shadow:0 4px 24px rgba(0,0,0,.3); }
+  #gate .badge { display:inline-block; background:var(--gold); color:var(--navy); font-weight:bold; font-size:12px; letter-spacing:2px; padding:4px 14px; border-radius:20px; margin-bottom:12px; }
+  #gate h2 { font-size:20px; color:var(--navy); font-weight:normal; margin-bottom:8px; }
+  #gate p { font-size:14px; color:#555; margin-bottom:16px; line-height:1.5; }
+  #gate input { width:100%; padding:11px 14px; font-size:16px; font-family:inherit; border:1px solid #ccc; border-radius:8px; text-align:center; margin-bottom:12px; }
+  #gate button { width:100%; padding:11px; font-size:15px; font-family:inherit; border:none; background:var(--navy); color:#fff; border-radius:8px; cursor:pointer; }
+  #gate button:hover { background:#2a3c66; }
+  #gate .err { color:#b3261e; font-size:13px; min-height:18px; margin-top:10px; }
+</style>
+</head>
+<body>
+<div id="gate" role="dialog" aria-label="Batch password required">
+  <div class="card">
+    <div class="badge">REC 2001</div>
+    <h2>Batchmates page</h2>
+    <p>This page is for the REC Rourkela Batch of 2001. Enter the batch password to view and edit entries.</p>
+    <input id="gate-key" type="password" placeholder="Batch password" autocomplete="off">
+    <button onclick="submitKey()">Open page</button>
+    <div class="err" id="gate-err"></div>
+  </div>
+</div>
+<header>
+  <div class="badge">REC 2001</div>
+  <h1>Batchmates - Names, Roll Numbers &amp; Comments</h1>
+  <p>Rourkela Engineering College, Batch of 2001</p>
+</header>
+<div class="wrap">
+  <div class="addbox">
+    <h2>Add yourself / a batchmate</h2>
+    <div class="formgrid">
+      <input class="f" id="a-name" placeholder="Name">
+      <input class="f" id="a-roll" placeholder="Roll No">
+      <input class="f" id="a-branch" placeholder="Branch">
+      <input class="f" id="a-comments" placeholder="Comments" style="display:none">
+      <textarea class="f wide" id="a-comments-ta" placeholder="Comments - a line about the person, memories, anything"></textarea>
+    </div>
+    <div class="formrow">
+      <button class="act primary" onclick="addRow()">Add row</button>
+      <span id="status"></span>
+    </div>
+  </div>
+  <div class="tools">
+    <input id="search" type="text" placeholder="Search by name, roll number, branch or comment..." oninput="render()">
+    <span id="count"></span>
+  </div>
+  <table>
+    <thead><tr><th style="width:20%">Name</th><th style="width:11%">Roll No</th><th style="width:14%">Branch</th><th>Comments</th><th style="width:64px"></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <footer>
+    Batchmates with the batch password can add and edit rows - changes appear immediately for everyone.<br>
+    Maintained from the reunion spreadsheet. <a href="https://rec2001.ai.studio/">rec2001.ai.studio</a>
+  </footer>
+</div>
+<script src="data.js"></script>
+<script>
+var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxFuascTAQFpHIGezju6PHm-yXZgS8y9eXJdT95gsb7tlvJkU0wR1OPgmTU-Kl83IdwBg/exec';
+var ENTRIES = window.REC_ENTRIES || [];
+var EDITING = null;
+var SID = sessionStorage.getItem('rec_sid') || '';
+var KEY = sessionStorage.getItem('rec_key') || '';
+
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function setStatus(t){ document.getElementById('status').textContent = t; }
+
+function render(){
+  var q = document.getElementById('search').value.trim().toLowerCase();
+  var rows = ENTRIES.filter(function(e){
+    if(!q) return true;
+    return (e.name+' '+e.roll+' '+e.branch+' '+e.comments).toLowerCase().indexOf(q) !== -1;
+  });
+  var tb = document.getElementById('rows');
+  if(!rows.length){
+    tb.innerHTML = '<tr><td colspan="5" class="empty">No matching entries yet - be the first to add one above.</td></tr>';
+  } else {
+    tb.innerHTML = rows.map(function(e, i){
+      if(EDITING === e.id){
+        return '<tr class="editing"><td><input class="f" id="e-name" value="'+esc(e.name)+'"></td>'+
+          '<td><input class="f" id="e-roll" value="'+esc(e.roll)+'"></td>'+
+          '<td><input class="f" id="e-branch" value="'+esc(e.branch)+'"></td>'+
+          '<td><textarea class="f" id="e-comments">'+esc(e.comments)+'</textarea></td>'+
+          '<td><button class="act primary" onclick="saveEdit()">Save</button><br><br><button class="act" onclick="EDITING=null;render()">Cancel</button></td></tr>';
+      }
+      return '<tr><td class="name">'+esc(e.name)+'</td><td class="roll">'+esc(e.roll)+'</td><td class="branch">'+esc(e.branch)+'</td><td class="comments">'+esc(e.comments)+'</td>'+
+        '<td><button class="act" onclick="startEdit(\''+esc(e.id)+'\')">Edit</button></td></tr>';
+    }).join('');
+  }
+  document.getElementById('count').textContent = rows.length + ' of ' + ENTRIES.length + ' entries';
+}
+
+function startEdit(id){ EDITING = id; render(); }
+
+function post(params, doneMsg){
+  setStatus('Saving...');
+  params.key = KEY;
+  fetch(WEB_APP_URL, { method:'POST', mode:'no-cors', body:new URLSearchParams(params) })
+    .then(function(){ setTimeout(function(){ refresh(doneMsg); }, 1500); })
+    .catch(function(){ setStatus('Could not save - check your connection and retry.'); });
+}
+
+function addRow(){
+  var p = { action:'add',
+    name: document.getElementById('a-name').value.trim(),
+    roll: document.getElementById('a-roll').value.trim(),
+    branch: document.getElementById('a-branch').value.trim(),
+    comments: document.getElementById('a-comments-ta').value.trim() };
+  if(!p.name && !p.roll && !p.branch && !p.comments){ setStatus('Nothing to add - fill at least one field.'); return; }
+  post(p, 'Added.');
+  document.getElementById('a-name').value=''; document.getElementById('a-roll').value='';
+  document.getElementById('a-branch').value=''; document.getElementById('a-comments-ta').value='';
+}
+
+function saveEdit(){
+  if(!EDITING) return;
+  post({ action:'edit', id:EDITING,
+    name: document.getElementById('e-name').value.trim(),
+    roll: document.getElementById('e-roll').value.trim(),
+    branch: document.getElementById('e-branch').value.trim(),
+    comments: document.getElementById('e-comments').value.trim() }, 'Saved.');
+  EDITING = null;
+}
+
+function showGate(msg){
+  document.getElementById('gate').className = 'open';
+  document.getElementById('gate-err').textContent = msg || '';
+  document.getElementById('gate-key').focus();
+}
+
+function hideGate(){ document.getElementById('gate').className = ''; }
+
+function newSid(){
+  var a = new Uint8Array(18);
+  (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach(function(_,i){ a[i] = Math.floor(Math.random()*256); });
+  return btoa(String.fromCharCode.apply(null, a)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+function submitKey(){
+  var k = document.getElementById('gate-key').value;
+  if(!k){ document.getElementById('gate-err').textContent = 'Enter the batch password.'; return; }
+  document.getElementById('gate-err').textContent = 'Checking...';
+  KEY = k; SID = newSid();
+  fetch(WEB_APP_URL, { method:'POST', mode:'no-cors', body:new URLSearchParams({ action:'auth', key:KEY, tok:SID }) })
+    .then(function(){ setTimeout(function(){ refresh('', true); }, 1200); })
+    .catch(function(){ document.getElementById('gate-err').textContent = 'Could not reach the server - check your connection.'; });
+}
+
+function refresh(doneMsg, fromGate){
+  if(!fromGate) setStatus('Refreshing...');
+  var cb = 'REC_CB_' + Date.now();
+  window[cb] = function(data){
+    delete window[cb];
+    var s = document.getElementById('jsonp'); if(s) s.remove();
+    if(!data || data.error){
+      SID = ''; KEY = '';
+      sessionStorage.removeItem('rec_sid'); sessionStorage.removeItem('rec_key');
+      showGate(fromGate ? 'Incorrect password - try again.' : 'Enter the batch password to continue.');
+      if(!fromGate) render();
+      return;
+    }
+    sessionStorage.setItem('rec_sid', SID); sessionStorage.setItem('rec_key', KEY);
+    ENTRIES = data.entries || [];
+    hideGate();
+    render();
+    setStatus(doneMsg || '');
+    setTimeout(function(){ setStatus(''); }, 4000);
+  };
+  var s = document.createElement('script');
+  s.id = 'jsonp';
+  s.src = WEB_APP_URL + '?callback=' + cb + '&tok=' + encodeURIComponent(SID) + '&_=' + Date.now();
+  s.onerror = function(){
+    if(fromGate){ document.getElementById('gate-err').textContent = 'Could not reach the server - check your connection.'; }
+    else { setStatus('Could not refresh - check your connection.'); }
+  };
+  document.body.appendChild(s);
+}
+
+document.getElementById('gate-key').addEventListener('keydown', function(e){ if(e.key === 'Enter') submitKey(); });
+if(SID){ refresh(); } else { showGate(); }
+</script>
+</body>
+</html>
