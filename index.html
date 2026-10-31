@@ -33,7 +33,7 @@
   .addbox h2 { font-size:17px; color:var(--navy); margin-bottom:12px; font-weight:normal; }
   .formgrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .formgrid .wide { grid-column:1 / -1; }
-  input.f, textarea.f { width:100%; padding:9px 12px; font-size:15px; font-family:inherit; border:1px solid #ccc; border-radius:8px; background:#fff; }
+  input.f, textarea.f, select.f { width:100%; padding:9px 12px; font-size:15px; font-family:inherit; border:1px solid #ccc; border-radius:8px; background:#fff; }
   textarea.f { resize:vertical; min-height:70px; }
   .formrow { margin-top:12px; display:flex; gap:10px; align-items:center; }
   #status { font-size:13px; color:#666; }
@@ -106,7 +106,7 @@
     <div class="formgrid">
       <input class="f" id="a-name" placeholder="Name">
       <input class="f" id="a-roll" placeholder="Roll No">
-      <input class="f" id="a-branch" placeholder="Branch">
+      <select class="f" id="a-branch"></select>
       <input class="f" id="a-comments" placeholder="Comments" style="display:none">
       <textarea class="f wide" id="a-comments-ta" placeholder="Comments - a line about the person, memories, anything"></textarea>
     </div>
@@ -140,6 +140,15 @@ var KEY = sessionStorage.getItem('rec_key') || '';
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function setStatus(t){ document.getElementById('status').textContent = t; }
 
+var BRANCHES = ['AEIE','Ceramic','Chemical','Civil','Computer Science','Electrical','Mechanical','Metallurgy','Mining'];
+function branchOptions(sel){
+  var opts = '<option value="">Select branch</option>';
+  BRANCHES.forEach(function(b){ opts += '<option value="'+esc(b)+'"'+(b===sel?' selected':'')+'>'+esc(b)+'</option>'; });
+  if(sel && BRANCHES.indexOf(sel) === -1){ opts += '<option value="'+esc(sel)+'" selected>'+esc(sel)+'</option>'; }
+  return opts;
+}
+document.getElementById('a-branch').innerHTML = branchOptions('');
+
 function render(){
   var q = document.getElementById('search').value.trim().toLowerCase();
   var rows = ENTRIES.filter(function(e){
@@ -154,7 +163,7 @@ function render(){
       if(EDITING === e.id){
         return '<tr class="editing"><td><input class="f" id="e-name" value="'+esc(e.name)+'"></td>'+
           '<td><input class="f" id="e-roll" value="'+esc(e.roll)+'"></td>'+
-          '<td><input class="f" id="e-branch" value="'+esc(e.branch)+'"></td>'+
+          '<td><select class="f" id="e-branch">'+branchOptions(e.branch)+'</select></td>'+
           '<td><textarea class="f" id="e-comments">'+esc(e.comments)+'</textarea></td>'+
           '<td><button class="act primary" onclick="saveEdit()">Save</button><br><br><button class="act" onclick="EDITING=null;render()">Cancel</button></td></tr>';
       }
